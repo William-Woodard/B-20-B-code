@@ -1,0 +1,89 @@
+#include <SPI.h>
+#include <TMCStepper.h>
+
+// Define CS pins 
+#define CS_X_PIN   A5   // PC5
+#define CS_Y_PIN   8   // PD0
+#define CS_Z_PIN   5   // PB2
+#define CS_P_PIN   A2   // PC2
+
+// Define STEP pins
+#define STEP_X_PIN   A4  // PC3
+#define STEP_Y_PIN   7  // PD1
+#define STEP_Z_PIN   10  // PB3
+#define STEP_P_PIN   A1  // PC1
+
+// Define DIR pins 
+#define DIR_X_PIN   A3  // PC4
+#define DIR_Y_PIN   6  // PB7
+#define DIR_Z_PIN   9  // PB1
+#define DIR_P_PIN   A0  // PC0
+
+#define R_SENSE 0.11f  // Appropriate Rsense value for your setup
+
+// Instantiate driver objects for each axis
+TMC2130Stepper driverX(CS_X_PIN, R_SENSE);
+TMC2130Stepper driverY(CS_Y_PIN, R_SENSE);
+TMC2130Stepper driverZ(CS_Z_PIN, R_SENSE);
+TMC2130Stepper driverP(CS_P_PIN, R_SENSE);
+
+void setup() {
+  SPI.begin(); // Begin SPI communication
+  Serial.begin(9600); // Start serial communication for debugging
+  
+  pinMode(CS_X_PIN, OUTPUT);
+  pinMode(CS_Y_PIN, OUTPUT);
+  pinMode(CS_Z_PIN, OUTPUT);
+  pinMode(CS_P_PIN, OUTPUT);
+
+  digitalWrite(CS_X_PIN, HIGH);
+  digitalWrite(CS_Y_PIN, HIGH);
+  digitalWrite(CS_Z_PIN, HIGH);
+  digitalWrite(CS_P_PIN, HIGH);
+
+  // Initialize each driver
+  driverSetup(&driverX);
+  driverSetup(&driverY);
+  driverSetup(&driverZ);
+  driverSetup(&driverP);
+
+  // Set pin modes for STEP and DIR
+  pinMode(STEP_X_PIN, OUTPUT);
+  pinMode(DIR_X_PIN, OUTPUT);
+  pinMode(STEP_Y_PIN, OUTPUT);
+  pinMode(DIR_Y_PIN, OUTPUT);
+  pinMode(STEP_Z_PIN, OUTPUT);
+  pinMode(DIR_Z_PIN, OUTPUT);
+  pinMode(STEP_P_PIN, OUTPUT);
+  pinMode(DIR_P_PIN, OUTPUT);
+}
+
+void loop() {
+  // Example of moving each axis
+  Serial.println("X");
+  moveMotor(&driverX, STEP_X_PIN, DIR_X_PIN, 3000, true);
+  Serial.println("Y");
+  moveMotor(&driverY, STEP_Y_PIN, DIR_Y_PIN, 3000, false);
+  Serial.println("Z");
+  moveMotor(&driverZ, STEP_Z_PIN, DIR_Z_PIN, 3000, true);
+  Serial.println("P");
+  moveMotor(&driverP, STEP_P_PIN, DIR_P_PIN, 3000, false);
+}
+
+void driverSetup(TMC2130Stepper *driver) {
+  driver->begin();
+  driver->toff(5);
+  driver->blank_time(24);
+  driver->rms_current(600); // Set motor RMS current
+  driver->microsteps(16); // Set microsteps to 16
+}
+
+void moveMotor(TMC2130Stepper *driver, int stepPin, int dirPin, int steps, bool dir) {
+  digitalWrite(dirPin, dir); // Set direction
+  for (int i = 0; i < steps; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(100);
+  }
+}
